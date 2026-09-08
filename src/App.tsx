@@ -22,6 +22,8 @@ const TEAM_INFO: Record<string, { label: string; color: string }> = {
 
 const EVENT_NAME = "TRAIL OF CLUES";
 const CLUB_NAME = "GECB Silver Screen — Film & Drama Club";
+const CO_ORGANIZER = "Mathrukam GECB";
+const ORGANIZERS = "GECB Silver Screen × Mathrukam GECB";
 
 // ════════════════════════════════════════════════════════
 // UTILITY COMPONENTS
@@ -96,13 +98,38 @@ function GecbLogo({ size = 44, ring = true }: { size?: number; ring?: boolean })
   );
 }
 
+function MathrukamLogo({ size = 44, ring = true }: { size?: number; ring?: boolean }) {
+  return (
+    <img
+      src="/mathrukam-gecb-logo.png"
+      alt="Mathrukam GECB"
+      width={size}
+      height={size}
+      className={ring ? "rounded-full border border-inv-border" : ""}
+      style={{ objectFit: "cover", flexShrink: 0, background: "#fff" }}
+    />
+  );
+}
+
+// Co-organizer lockup: both club logos with a small "×" between them.
+// Used anywhere the event's organizers are credited.
+function OrganizersLockup({ size = 32, ring = true }: { size?: number; ring?: boolean }) {
+  return (
+    <div className="flex items-center gap-2">
+      <GecbLogo size={size} ring={ring} />
+      <span className="text-inv-muted text-xs font-mono">×</span>
+      <MathrukamLogo size={size} ring={ring} />
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════
 // PHASE 1: TERMINAL BOOT
 // ════════════════════════════════════════════════════════
 
 const BOOT_LINES = [
   { text: "Initializing...", delay: 0 },
-  { text: "GECB SILVER SCREEN NETWORK v4.7", delay: 700 },
+  { text: "GECB SILVER SCREEN × MATHRUKAM GECB NETWORK v4.7", delay: 700 },
   { text: "Connecting to Film & Drama Club servers...", delay: 1500 },
   { text: "Loading event archives...", delay: 2500 },
   { text: "Decrypting mission briefing...", delay: 3500 },
@@ -143,9 +170,9 @@ function TerminalBoot({ onComplete }: { onComplete: () => void }) {
         style={{ filter: glitch ? "hue-rotate(30deg) saturate(2)" : "none", transition: "filter 0.1s" }}
       >
         <div className="mb-6 border-b border-green-900/50 pb-4 flex items-center gap-3">
-          <GecbLogo size={28} />
+          <OrganizersLockup size={28} />
           <div className="text-green-600/70 text-xs tracking-widest">
-            ■ SECURE TERMINAL — GECB SILVER SCREEN — RESTRICTED ACCESS
+            ■ SECURE TERMINAL — SILVER SCREEN × MATHRUKAM GECB — RESTRICTED ACCESS
           </div>
         </div>
 
@@ -299,9 +326,10 @@ function ConfidentialDocument({ onComplete }: { onComplete: () => void }) {
       <div className={`paper max-w-lg w-full p-8 relative shadow-2xl ${folding ? "fold-away" : "fade-up"}`} style={{ border: "1px solid #B8A878" }}>
         <div className="text-center border-b-2 border-[#2A1F14]/30 pb-4 mb-6">
           <div className="flex items-center justify-center gap-2 mb-3">
-            <GecbLogo size={32} />
+            <OrganizersLockup size={32} />
           </div>
           <div className="text-[10px] font-mono text-[#6B5C40] tracking-[0.4em] uppercase mb-2">GECB SILVER SCREEN — FILM &amp; DRAMA CLUB</div>
+          <div className="text-[9px] font-mono text-[#6B5C40] tracking-[0.3em] uppercase mb-2">in association with MATHRUKAM GECB</div>
           <div className="text-[10px] font-mono text-[#6B5C40] tracking-[0.4em]">NOTICE OF RESTRICTED ACCESS</div>
         </div>
 
@@ -324,7 +352,7 @@ function ConfidentialDocument({ onComplete }: { onComplete: () => void }) {
             Only <strong>assigned team leads</strong> with a verified access code may proceed beyond this point.
           </p>
           <p className="text-[#6B5C40] text-xs">
-            By proceeding, you acknowledge that all verification attempts within this portal are logged for the Silver Screen organizing committee.
+            By proceeding, you acknowledge that all verification attempts within this portal are logged for the Silver Screen × Mathrukam GECB organizing committee.
           </p>
         </div>
 
@@ -334,7 +362,7 @@ function ConfidentialDocument({ onComplete }: { onComplete: () => void }) {
           <div>
             <div className="text-[#6B5C40] text-[9px] font-mono uppercase tracking-wider">Organizing Committee</div>
             <div className="text-[#2A1F14] text-lg mt-1" style={{ fontFamily: "'Caveat', cursive" }}>
-              GECB Silver Screen
+              GECB Silver Screen × Mathrukam GECB
             </div>
             <div className="h-px w-32 bg-[#2A1F14]/30 mt-1" />
           </div>
@@ -447,7 +475,11 @@ function EventReveal({ onComplete }: { onComplete: () => void }) {
 
         {step >= 4 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center fade-up">
-            <GecbLogo size={72} ring={false} />
+            <div className="flex items-center gap-3">
+              <GecbLogo size={72} ring={false} />
+              <span className="text-inv-muted text-xl font-mono">×</span>
+              <MathrukamLogo size={72} ring={false} />
+            </div>
             <div
               className="text-inv-offwhite text-[clamp(2.6rem,9vw,6.5rem)] font-black tracking-[0.1em] text-center leading-none drop-shadow-2xl mt-4"
               style={{ fontFamily: "'Bebas Neue', sans-serif", textShadow: "0 0 60px rgba(140,29,29,0.5)" }}
@@ -455,7 +487,7 @@ function EventReveal({ onComplete }: { onComplete: () => void }) {
               {EVENT_NAME}
             </div>
             <div className="text-inv-yellow text-base sm:text-xl tracking-[0.25em] uppercase mt-3 text-center px-4" style={{ fontFamily: "'Oswald', sans-serif" }}>
-              {CLUB_NAME} presents
+              {ORGANIZERS} presents
             </div>
           </div>
         )}
@@ -524,8 +556,10 @@ function RegisterScreen({ onConfirmed }: { onConfirmed: (team: string, teamLead:
 
       <div className="relative max-w-md w-full">
         <div className="relative">
-          <div className="h-8 w-48 bg-inv-brown ml-6 rounded-t-sm border-t border-l border-r border-inv-border flex items-center px-3 gap-2">
+          <div className="h-8 w-64 bg-inv-brown ml-6 rounded-t-sm border-t border-l border-r border-inv-border flex items-center px-3 gap-2">
             <GecbLogo size={16} />
+            <span className="text-inv-muted text-[9px] font-mono">×</span>
+            <MathrukamLogo size={16} />
             <span className="text-inv-muted text-[9px] font-mono tracking-wider uppercase">TRAIL OF CLUES — TOC-2026</span>
           </div>
 
@@ -534,9 +568,10 @@ function RegisterScreen({ onConfirmed }: { onConfirmed: (team: string, teamLead:
 
             <div className="text-center mb-8">
               <div className="flex justify-center mb-3">
-                <GecbLogo size={48} />
+                <OrganizersLockup size={48} />
               </div>
-              <div className="text-inv-muted text-[9px] font-mono tracking-[0.4em] uppercase mb-3">RESTRICTED ACCESS PORTAL</div>
+              <div className="text-inv-muted text-[9px] font-mono tracking-[0.3em] uppercase mb-1">RESTRICTED ACCESS PORTAL</div>
+              <div className="text-inv-muted text-[8px] font-mono tracking-[0.2em] uppercase mb-3">Silver Screen × Mathrukam GECB</div>
               <h1 className="text-inv-offwhite text-3xl sm:text-4xl font-black tracking-[0.12em]" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
                 TEAM VERIFICATION
               </h1>
@@ -627,7 +662,11 @@ function ExitScreen({ team, teamLead }: { team: string; teamLead: string }) {
       <DustParticles />
 
       <div className="relative z-10 flex flex-col items-center text-center px-6 fade-up">
-        <GecbLogo size={64} ring={false} />
+        <div className="flex items-center gap-2">
+          <GecbLogo size={64} ring={false} />
+          <span className="text-inv-muted text-lg font-mono">×</span>
+          <MathrukamLogo size={64} ring={false} />
+        </div>
 
         <div className="mt-6 text-inv-muted text-[10px] font-mono tracking-[0.4em] uppercase">
           Verified — {teamLead}
@@ -657,7 +696,7 @@ function ExitScreen({ team, teamLead }: { team: string; teamLead: string }) {
           <span className="walk-pulse" style={{ animationDelay: "0.4s" }}>➜</span>
         </div>
 
-        <div className="mt-10 text-inv-muted text-[9px] font-mono tracking-widest">{CLUB_NAME}</div>
+        <div className="mt-10 text-inv-muted text-[9px] font-mono tracking-widest">{ORGANIZERS}</div>
       </div>
     </div>
   );

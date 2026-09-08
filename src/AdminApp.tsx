@@ -318,7 +318,7 @@ export default function AdminApp() {
             <h1 className="text-2xl sm:text-3xl font-black tracking-wider" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>
               TRAIL OF CLUES — VERIFICATION LOG
             </h1>
-            <p className="text-inv-muted text-xs font-mono mt-1">GECB Silver Screen — organizer dashboard</p>
+            <p className="text-inv-muted text-xs font-mono mt-1">GECB Silver Screen × Mathrukam GECB — organizer dashboard</p>
           </div>
           <div className="flex items-center gap-2">
             <label className="text-inv-muted text-xs font-mono flex items-center gap-1.5">

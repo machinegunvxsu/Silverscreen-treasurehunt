@@ -1,4 +1,4 @@
-# Trail of Clues — GECB Silver Screen
+# Trail of Clues — GECB Silver Screen × Mathrukam GECB
 
 A team verification portal for the "Trail of Clues" event. Keeps the original
 noir/investigation intro animations (terminal boot → security scan →

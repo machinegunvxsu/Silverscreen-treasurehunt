@@ -56,6 +56,9 @@ export default function AdminApp() {
   const [err, setErr] = useState("");
   const [filter, setFilter] = useState<"all" | "accepted" | "rejected">("accepted");
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [clearing, setClearing] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [clearMsg, setClearMsg] = useState("");
 
   // Config editor state (group codes + team roster, backed by Blobs via seed-config)
   const [showConfig, setShowConfig] = useState(false);
@@ -100,6 +103,37 @@ export default function AdminApp() {
       setErr("Could not reach the backend. Check your connection or Netlify function deployment.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const clearHistory = async () => {
+    if (!confirmClear) {
+      setConfirmClear(true);
+      setClearMsg("");
+      setTimeout(() => setConfirmClear(false), 5000);
+      return;
+    }
+    setClearing(true);
+    setClearMsg("");
+    setErr("");
+    try {
+      const res = await fetch("/.netlify/functions/reset-submissions", {
+        method: "POST",
+        headers: { "x-admin-key": adminKey },
+      });
+      if (!res.ok) {
+        setErr(await describeFailure(res));
+        return;
+      }
+      const data = await res.json();
+      setSubs([]);
+      setClearMsg(`Cleared ${data.cleared ?? 0} entr${data.cleared === 1 ? "y" : "ies"}.`);
+      setTimeout(() => setClearMsg(""), 4000);
+    } catch {
+      setErr("Could not reach the backend to clear history.");
+    } finally {
+      setClearing(false);
+      setConfirmClear(false);
     }
   };
 
@@ -337,8 +371,20 @@ export default function AdminApp() {
             >
               {loading ? "Refreshing..." : "Refresh"}
             </button>
+            <button
+              onClick={clearHistory}
+              disabled={clearing}
+              className={`px-3 py-2 border text-xs font-mono uppercase tracking-wider disabled:opacity-50 ${
+                confirmClear
+                  ? "border-inv-red bg-inv-red/10 text-inv-red"
+                  : "border-inv-border text-inv-muted hover:border-inv-red hover:text-inv-red"
+              }`}
+            >
+              {clearing ? "Clearing..." : confirmClear ? "Click again to confirm" : "Clear History"}
+            </button>
           </div>
         </div>
+        {clearMsg && <div className="text-inv-green text-xs font-mono -mt-4 mb-4">{clearMsg}</div>}
 
         {/* Config editor — reads/writes the group codes + team roster stored in Blobs */}
         {showConfig && (

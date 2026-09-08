@@ -547,13 +547,13 @@ function RegisterScreen({ onConfirmed }: { onConfirmed: (team: string, teamLead:
 
             <div className="space-y-4">
               <div>
-                <label className="text-inv-yellow text-[9px] font-mono tracking-[0.3em] uppercase block mb-2">Team Name</label>
+                <label className="text-inv-yellow text-[9px] font-mono tracking-[0.3em] uppercase block mb-2">Team Lead Name</label>
                 <input
                   type="text"
                   value={teamLead}
                   onChange={(e) => setTeamLead(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                  placeholder="TEAM NAME..."
+                  placeholder="TEAM LEAD NAME..."
                   disabled={state === "checking" || state === "confirmed"}
                   className="w-full bg-inv-black border border-inv-border text-inv-offwhite font-mono text-base px-4 py-3 tracking-wide outline-none focus:border-inv-yellow transition-colors placeholder:text-inv-border placeholder:text-sm disabled:opacity-50"
                 />

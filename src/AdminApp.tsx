@@ -66,6 +66,12 @@ export default function AdminApp() {
   const [configErr, setConfigErr] = useState("");
   const [configMsg, setConfigMsg] = useState("");
 
+  // Bulk import: paste "Team Name,GROUP" lines, either replacing the whole
+  // roster or adding on top of what's already there.
+  const [bulkText, setBulkText] = useState("");
+  const [bulkMode, setBulkMode] = useState<"add" | "replace">("add");
+  const [bulkErr, setBulkErr] = useState("");
+
   const fetchSubs = async (key: string) => {
     setLoading(true);
     setErr("");
@@ -155,9 +161,88 @@ export default function AdminApp() {
     }
   };
 
-  useEffect(() => {
-    if (adminKey) fetchSubs(adminKey);
-  }, []);
+  // Parses "Team Name,GROUP" lines (one per line, blank lines ignored) into
+  // draftRoster, either replacing the whole roster or merging into it.
+  // Unknown group names are accepted too — they'll show up as a new card
+  // with an empty code field, ready for the admin to fill in.
+  const applyBulkImport = () => {
+    setBulkErr("");
+    const lines = bulkText
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    if (!lines.length) {
+      setBulkErr("Paste at least one line in the form: Team Name,GROUP");
+      return;
+    }
+
+    const parsed: Record<string, string[]> = {};
+    const badLines: string[] = [];
+
+    lines.forEach((line) => {
+      const idx = line.indexOf(",");
+      if (idx === -1) {
+        badLines.push(line);
+        return;
+      }
+      const name = line.slice(0, idx).trim();
+      const group = line.slice(idx + 1).trim().toUpperCase();
+      if (!name || !group) {
+        badLines.push(line);
+        return;
+      }
+      if (!parsed[group]) parsed[group] = [];
+      parsed[group].push(name);
+    });
+
+    if (badLines.length) {
+      setBulkErr(`Couldn't parse ${badLines.length} line(s) — expected "Team Name,GROUP": ${badLines.slice(0, 3).join(" | ")}${badLines.length > 3 ? "…" : ""}`);
+      return;
+    }
+
+    if (bulkMode === "replace") {
+      // Wipe every existing group's roster, then write only what was pasted.
+      const next: Record<string, string> = {};
+      Object.keys(draftRoster).forEach((group) => {
+        next[group] = "";
+      });
+      Object.entries(parsed).forEach(([group, names]) => {
+        next[group] = names.join("\n");
+      });
+      setDraftRoster(next);
+    } else {
+      // Add to existing rosters, skipping names already present in that group.
+      setDraftRoster((prev) => {
+        const next = { ...prev };
+        Object.entries(parsed).forEach(([group, names]) => {
+          const existing = (next[group] ?? "")
+            .split("\n")
+            .map((n) => n.trim())
+            .filter(Boolean);
+          const existingNormalized = new Set(existing.map((n) => n.toLowerCase()));
+          const toAdd = names.filter((n) => !existingNormalized.has(n.toLowerCase()));
+          next[group] = [...existing, ...toAdd].join("\n");
+        });
+        return next;
+      });
+    }
+
+    // Make sure any newly-mentioned group gets a code field to fill in.
+    setDraftCodes((prev) => {
+      const next = { ...prev };
+      Object.keys(parsed).forEach((group) => {
+        if (!(group in next)) next[group] = "";
+      });
+      return next;
+    });
+
+    setBulkText("");
+    setConfigMsg(`Imported into draft (${bulkMode === "replace" ? "replaced" : "added to"} roster) — review below, then Save to Blobs.`);
+    setTimeout(() => setConfigMsg(""), 4000);
+  };
+
+
 
   useEffect(() => {
     if (authed && adminKey) fetchConfig(adminKey);
@@ -188,8 +273,10 @@ export default function AdminApp() {
 
   const groupsToShow = useMemo(() => {
     const fromConfig = config ? Object.keys(config.groupCodes || {}) : [];
-    return fromConfig.length ? fromConfig : TEAM_NAMES;
-  }, [config]);
+    const fromDraft = new Set([...Object.keys(draftCodes), ...Object.keys(draftRoster)]);
+    const combined = new Set([...fromConfig, ...fromDraft]);
+    return combined.size ? Array.from(combined) : TEAM_NAMES;
+  }, [config, draftCodes, draftRoster]);
 
   if (!authed) {
     return (
@@ -278,6 +365,57 @@ export default function AdminApp() {
 
             {config && (
               <>
+                <div className="border border-inv-border p-3 mb-4">
+                  <div className="text-inv-yellow text-[10px] font-mono uppercase tracking-widest mb-2">
+                    Bulk Add Teams
+                  </div>
+                  <div className="text-inv-muted text-[10px] font-mono mb-2 leading-relaxed">
+                    One team per line, format <code>Team Name,GROUP</code> — e.g. <code>Team Alpha,DOLLYTRACK</code>.
+                    Unrecognized group names are fine; they'll appear as a new card below with an empty code for you to fill in.
+                  </div>
+                  <textarea
+                    value={bulkText}
+                    onChange={(e) => setBulkText(e.target.value)}
+                    rows={4}
+                    placeholder={"Team Alpha,DOLLYTRACK\nTeam Bravo,CLAPBOARD"}
+                    className="w-full bg-inv-black border border-inv-border text-inv-offwhite font-mono text-xs px-2 py-1.5 outline-none focus:border-inv-yellow resize-y mb-2"
+                  />
+                  {bulkErr && <div className="text-inv-red text-[10px] font-mono mb-2">{bulkErr}</div>}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-3 text-[10px] font-mono uppercase tracking-wider">
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="bulk-mode"
+                          checked={bulkMode === "add"}
+                          onChange={() => setBulkMode("add")}
+                        />
+                        Add to existing
+                      </label>
+                      <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="bulk-mode"
+                          checked={bulkMode === "replace"}
+                          onChange={() => setBulkMode("replace")}
+                        />
+                        Replace all teams
+                      </label>
+                    </div>
+                    <button
+                      onClick={applyBulkImport}
+                      className="px-3 py-1.5 border border-inv-yellow text-inv-yellow text-[10px] font-mono uppercase tracking-widest hover:bg-inv-yellow/10"
+                    >
+                      Apply to Draft
+                    </button>
+                    {bulkMode === "replace" && (
+                      <span className="text-inv-red text-[9px] font-mono uppercase tracking-wider">
+                        ⚠ clears every group's current roster in the draft
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                   {groupsToShow.map((group) => (
                     <div key={group} className="border border-inv-border p-3">
@@ -364,7 +502,7 @@ export default function AdminApp() {
           <table className="w-full text-sm font-mono">
             <thead>
               <tr className="border-b border-inv-border text-inv-muted text-[10px] uppercase tracking-wider">
-                <th className="text-left px-3 py-2">Team</th>
+                <th className="text-left px-3 py-2">Team Lead</th>
                 <th className="text-left px-3 py-2">Code</th>
                 <th className="text-left px-3 py-2">Group</th>
                 <th className="text-left px-3 py-2">Status</th>
